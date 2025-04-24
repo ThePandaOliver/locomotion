@@ -1,16 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
-plugins {
-    id("dev.architectury.loom")
-    id("architectury-plugin")
-    id("com.github.johnrengelman.shadow")
-}
-
 val loader = prop("loom.platform")!!
-val minecraft: String = stonecutter.current.version
-val common: Project = requireNotNull(stonecutter.node.sibling("")) {
-    "No common project for $project"
-}.project
+val minecraft = prop("version.minecraft")
 
 version = "${prop("mod.version")}+$minecraft-playtesting"
 base {
@@ -86,8 +77,8 @@ dependencies {
     })
     modImplementation("net.fabricmc:fabric-loader:${versionProp("fabric_loader")}")
 
-    commonBundle(project(common.path, "namedElements")) { isTransitive = false }
-    shadowBundle(project(common.path, "transformProductionFabric")) { isTransitive = false }
+    commonBundle(project(rootProject.path, "namedElements")) { isTransitive = false }
+    shadowBundle(project(rootProject.path, "transformProductionFabric")) { isTransitive = false }
 
     // Mod implementations
     modImplementation("net.fabricmc.fabric-api:fabric-api:${versionProp("fabric_api_version")}")
@@ -124,28 +115,7 @@ tasks.jar {
 
 java {
     withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
-        JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+    val java = JavaVersion.VERSION_21
     targetCompatibility = java
     sourceCompatibility = java
-}
-
-tasks.build {
-    group = "versioned"
-    description = "Must run through 'chiseledBuild'"
-}
-
-tasks.register<Copy>("buildAndCollect") {
-    group = "versioned"
-    description = "Must run through 'chiseledBuild'"
-    from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
-    into(rootProject.layout.buildDirectory.file("libs/${prop("mod.version")}/$loader"))
-    dependsOn("build")
-}
-
-stonecutter {
-    // Constants should be given a key and a boolean value
-    const("fabric", loader == "fabric")
-    const("forge", loader == "forge")
-    const("neoforge", loader == "neoforge")
 }

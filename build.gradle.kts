@@ -1,21 +1,28 @@
 @file:Suppress("UnstableApiUsage")
 
 plugins {
-	id("dev.architectury.loom")
-	id("architectury-plugin")
+	id("dev.architectury.loom") version "1.10-SNAPSHOT"
+	id("architectury-plugin") version "3.4-SNAPSHOT"
+	id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-val minecraft = stonecutter.current.version
+val minecraft = prop("version.minecraft")
 
-version = "${prop("mod.version")}+$minecraft-playtesting"
-base {
-	archivesName.set("${prop("mod.id")}-common")
+subprojects {
+	apply(plugin = "dev.architectury.loom")
+	apply(plugin = "architectury-plugin")
+	apply(plugin = "com.github.johnrengelman.shadow")
+
+	version = "${prop("mod.version")}+$minecraft-playtesting"
+	base {
+		archivesName.set("${prop("mod.id")}-common")
+	}
 }
 
-architectury.common(stonecutter.tree.branches.mapNotNull {
-	if (stonecutter.current.project !in it) null
-	else it.project.prop("loom.platform")
-})
+val supportedLoaders = mutableListOf<String>()
+if (findProject(":fabric") != null) supportedLoaders += "fabric"
+if (findProject(":neoforge") != null) supportedLoaders += "neoforge"
+architectury.common(supportedLoaders)
 
 loom {
 	silentMojangMappingsLicense()
@@ -54,13 +61,7 @@ tasks.processResources {
 
 java {
 	withSourcesJar()
-	val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
-		JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+	val java = JavaVersion.VERSION_21
 	targetCompatibility = java
 	sourceCompatibility = java
-}
-
-tasks.build {
-	group = "versioned"
-	description = "Must run through 'chiseledBuild'"
 }

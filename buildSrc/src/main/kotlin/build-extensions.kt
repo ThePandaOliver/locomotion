@@ -1,4 +1,3 @@
-import dev.kikugie.stonecutter.build.StonecutterBuild
 import org.gradle.api.Project
 import org.gradle.language.jvm.tasks.ProcessResources
 
@@ -18,7 +17,7 @@ fun Project.prop(key: String): String? = findProperty(key)?.toString()
  * @throws IllegalArgumentException if neither the version-specific key nor the wildcard key is found.
  */
 fun Project.versionProp(key: String): String? {
-    val specificKey = "version.${stonecutter(project).current.version.replace(".", "_")}.$key"
+    val specificKey = "version.${prop("version.minecraft")?.replace(".", "_")}.$key"
     val wildcardKey = "version.*.$key"
 
     return when {
@@ -35,7 +34,7 @@ fun Project.versionProp(key: String): String? {
  * @return the value of the property as a string if found, or null if the property is missing.
  */
 fun Project.versionPropOrNull(key: String): String? {
-    val specificKey = "version.${stonecutter(project).current.version.replace(".", "_")}.$key"
+    val specificKey = "version.${prop("version.minecraft")?.replace(".", "_")}.$key"
     val wildcardKey = "version.*.$key"
 
     return when {
@@ -62,7 +61,7 @@ fun ProcessResources.applyProperties(project: Project, files: Iterable<String>) 
             "mod_description" to project.prop("mod.description"),
             "mod_license" to project.prop("mod.license"),
 
-            "minecraft_version" to stonecutter(project).current.version,
+            "minecraft_version" to project.prop("version.minecraft"),
     )
     fun addNullable(name: String, value: String?) {
         if (value != null) props[name] = value
@@ -76,8 +75,4 @@ fun ProcessResources.applyProperties(project: Project, files: Iterable<String>) 
     filesMatching(files) {
         expand(props)
     }
-}
-
-fun stonecutter(project: Project): StonecutterBuild {
-    return requireNotNull(project.extensions.findByType(StonecutterBuild::class.java)) { "Stonecutter build extension not found" }
 }
